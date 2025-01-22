@@ -9,37 +9,37 @@ class DatabaseManager {
 
   public static getInstance(): sqlite3.Database {
     if (this.instance === null) {
-      this.instance = new sqlite3.Database(":memory:", (err) => {
+      this.instance = new sqlite3.Database("src/db/gtfs.db", (err) => {
         if (err) {
           console.error("Error opening in-memory database:", err);
         } else {
           console.log("In-memory database opened successfully");
-          this.loadGTFSData();
+          // this.loadGTFSData();
         }
       });
     }
     return this.instance;
   }
 
-  private static loadGTFSData(): void {
-    const filePath = path.resolve(__dirname, "gtfs.db");
-    if (!fs.existsSync(filePath)) {
-      console.error(`File database not found at ${filePath}`);
-      return;
-    }
+  // private static loadGTFSData(): void {
+  //   const filePath = path.resolve(__dirname, "gtfs.db");
+  //   if (!fs.existsSync(filePath)) {
+  //     console.error(`File database not found at ${filePath}`);
+  //     return;
+  //   }
 
-    new sqlite3.Database(filePath, (err) => {
-      if (err) {
-        console.error("Error opening file database:", err);
-        return;
-      }
-      console.log("File database opened successfully");
-      this.instance?.exec(
-        `ATTACH DATABASE '${filePath}' AS file_db`,
-        (err) => {}
-      );
-    });
-  }
+  //   new sqlite3.Database(filePath, (err) => {
+  //     if (err) {
+  //       console.error("Error opening file database:", err);
+  //       return;
+  //     }
+  //     console.log("File database opened successfully");
+  //     this.instance?.exec(
+  //       `ATTACH DATABASE '${filePath}' AS file_db`,
+  //       (err) => {}
+  //     );
+  //   });
+  // }
 
   public static close(): void {
     if (this.instance) {

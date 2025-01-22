@@ -1,6 +1,7 @@
 import express from "express";
 import { config as dotenvConfig } from "dotenv";
 import rideRoutes from "./routes/rides";
+
 dotenvConfig();
 
 const app = express();
