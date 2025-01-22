@@ -78,6 +78,114 @@ class GtfsController {
     }
   };
 
+  // getStopIdDetails = async (req: Request, res: Response) => {
+  //   const {
+  //     oneOfNextStopLike,
+  //     currentStopId,
+  //     currentStopDescroptionLike,
+  //     agencyName,
+  //     limit,
+  //     routeShortName,
+  //   } = req.body;
+
+  //   if (
+  //     !oneOfNextStopLike &&
+  //     !currentStopId &&
+  //     !currentStopDescroptionLike &&
+  //     !agencyName &&
+  //     !routeShortName
+  //   ) {
+  //     res.status(400).json({ error: "bad request" });
+  //   }
+  //   let query = "";
+  //   if (currentStopId) {
+  //     query = `
+  //       WITH CurrentStopSequence AS (
+  //         SELECT st1.trip_id, st1.stop_sequence, st1.stop_id
+  //         FROM stop_times st1
+  //         WHERE st1.stop_id = '${currentStopId}'
+  //       )`;
+  //   }
+  //   if (oneOfNextStopLike) {
+  //     query += `
+  //       , NextStops AS (
+  //         SELECT st2.trip_id
+  //         FROM CurrentStopSequence cs
+  //         JOIN stop_times st2 ON cs.trip_id = st2.trip_id
+  //         JOIN stops s ON st2.stop_id = s.stop_id
+  //         WHERE st2.stop_sequence > cs.stop_sequence
+  //         AND s.stop_name LIKE '%${oneOfNextStopLike}%'
+  //       )`;
+  //   }
+  //   query += `
+  //     SELECT DISTINCT
+  //       st.trip_id,
+  //       r.route_id,
+  //       r.route_long_name,
+  //       r.route_short_name,
+  //       a.agency_name,
+  //       a.agency_id,
+  //       s.stop_name,
+  //       st.arrival_time,
+  //       st.stop_id,
+  //       c.sunday,
+  //       c.monday,
+  //       c.tuesday,
+  //       c.thursday,
+  //       c.wednesday,
+  //       c.friday,
+  //       c.saturday,
+  //       s.stop_desc,
+  //       st.stop_sequence
+  //     FROM stop_times st
+  //     JOIN trips t ON st.trip_id = t.trip_id
+  //     JOIN routes r ON t.route_id = r.route_id
+  //     JOIN agency a ON r.agency_id = a.agency_id
+  //     JOIN stops s ON st.stop_id = s.stop_id
+  //     JOIN calendar c ON t.service_id = c.service_id
+  //     WHERE`;
+  //   const israelTime = new Intl.DateTimeFormat("en-GB", this.options).format(
+  //     new Date()
+  //   );
+  //   query += ` st.arrival_time > '${israelTime}'`;
+  //   query += ` AND c."${this.getCurrentDay()}" = 1`;
+
+  //   if (currentStopId) {
+  //     query += ` AND st.stop_id = '${currentStopId}'`;
+  //   }
+
+  //   if (currentStopDescroptionLike) {
+  //     query += ` AND s.stop_desc LIKE '%${currentStopDescroptionLike}%'`;
+  //   }
+
+  //   if (agencyName) {
+  //     query += ` AND agency_name LIKE '%${agencyName}%'`;
+  //   }
+  //   if (routeShortName) {
+  //     query += ` AND r.route_short_name = ${routeShortName}`;
+  //   }
+  //   if (oneOfNextStopLike) {
+  //     query += `
+  //       AND EXISTS (
+  //         SELECT 1
+  //         FROM NextStops ns
+  //         WHERE ns.trip_id = st.trip_id
+  //       )`;
+  //   }
+
+  //   query += ` ORDER BY st.trip_id, st.stop_sequence`;
+  //   if (limit) {
+  //     query += ` LIMIT ${limit}`;
+  //   }
+  //   console.log("stop details", query);
+  //   try {
+  //     const results = await runQuery(query);
+  //     res.send(results);
+  //   } catch (error) {
+  //     res.status(500).send({ error: "An error occurred while fetching data." });
+  //   }
+  // };
+
   getStopIdDetails = async (req: Request, res: Response) => {
     const {
       oneOfNextStopLike,
@@ -96,92 +204,106 @@ class GtfsController {
       !routeShortName
     ) {
       res.status(400).json({ error: "bad request" });
+      return;
     }
-    let query = "";
-    if (currentStopId) {
-      query = `
-        WITH CurrentStopSequence AS (
-          SELECT st1.trip_id, st1.stop_sequence, st1.stop_id
-          FROM stop_times st1
-          WHERE st1.stop_id = '${currentStopId}'
-        )`;
-    }
-    if (oneOfNextStopLike) {
-      query += `
-        , NextStops AS (
-          SELECT st2.trip_id
-          FROM CurrentStopSequence cs
-          JOIN stop_times st2 ON cs.trip_id = st2.trip_id
-          JOIN stops s ON st2.stop_id = s.stop_id
-          WHERE st2.stop_sequence > cs.stop_sequence
-          AND s.stop_name LIKE '%${oneOfNextStopLike}%'
-        )`;
-    }
-    query += `
-      SELECT DISTINCT
-        st.trip_id,
-        r.route_id,
-        r.route_long_name,
-        r.route_short_name,
-        a.agency_name,
-        a.agency_id,
-        s.stop_name,
-        st.arrival_time,
-        st.stop_id,
-        c.sunday,
-        c.monday,
-        c.tuesday,
-        c.thursday,
-        c.wednesday,
-        c.friday,
-        c.saturday,
-        s.stop_desc,
-        st.stop_sequence
-      FROM stop_times st
-      JOIN trips t ON st.trip_id = t.trip_id
-      JOIN routes r ON t.route_id = r.route_id
-      JOIN agency a ON r.agency_id = a.agency_id
-      JOIN stops s ON st.stop_id = s.stop_id
-      JOIN calendar c ON t.service_id = c.service_id
-      WHERE`;
+
     const israelTime = new Intl.DateTimeFormat("en-GB", this.options).format(
       new Date()
     );
-    query += ` st.arrival_time > '${israelTime}'`;
-    query += ` AND c."${this.getCurrentDay()}" = 1`;
-
-    if (currentStopId) {
-      query += ` AND st.stop_id = '${currentStopId}'`;
-    }
-
-    if (currentStopDescroptionLike) {
-      query += ` AND s.stop_desc LIKE '%${currentStopDescroptionLike}%'`;
-    }
-
-    if (agencyName) {
-      query += ` AND agency_name LIKE '%${agencyName}%'`;
-    }
-    if (routeShortName) {
-      query += ` AND r.route_short_name = ${routeShortName}`;
-    }
-    if (oneOfNextStopLike) {
-      query += `
-        AND EXISTS (
-          SELECT 1
-          FROM NextStops ns
-          WHERE ns.trip_id = st.trip_id
-        )`;
-    }
-
-    query += ` ORDER BY st.trip_id, st.stop_sequence`;
-    if (limit) {
-      query += ` LIMIT ${limit}`;
-    }
 
     try {
+      // Build the main query focusing on stop_times first
+      let query = `
+        WITH relevant_stops AS (
+          SELECT st.trip_id, st.stop_id, st.stop_sequence, st.arrival_time
+          FROM stop_times st
+          WHERE st.arrival_time > '${israelTime}'
+          ${currentStopId ? `AND st.stop_id = '${currentStopId}'` : ""}
+          ORDER BY st.arrival_time
+          LIMIT 10000  -- Limit initial dataset
+        )`;
+
+      // If we need to check next stops, do it early
+      if (oneOfNextStopLike) {
+        query += `
+        , valid_trips AS (
+          SELECT DISTINCT t1.trip_id
+          FROM relevant_stops t1
+          JOIN stop_times t2 ON t1.trip_id = t2.trip_id
+          JOIN stops s ON t2.stop_id = s.stop_id
+          WHERE s.stop_name LIKE '%${oneOfNextStopLike}%'
+          ${currentStopId ? "AND t2.stop_sequence > t1.stop_sequence" : ""}
+        )`;
+      }
+
+      // Add route and agency filtering if needed
+      if (routeShortName || agencyName) {
+        query += `
+        , filtered_trips AS (
+          SELECT t.trip_id
+          FROM trips t
+          JOIN routes r ON t.route_id = r.route_id
+          ${agencyName ? "JOIN agency a ON r.agency_id = a.agency_id" : ""}
+          WHERE 1=1
+          ${routeShortName ? `AND r.route_short_name = ${routeShortName}` : ""}
+          ${agencyName ? `AND a.agency_name LIKE '%${agencyName}%'` : ""}
+        )`;
+      }
+
+      // Main select with all necessary data
+      query += `
+        SELECT 
+          rs.trip_id,
+          r.route_id,
+          r.route_long_name,
+          r.route_short_name,
+          a.agency_name,
+          a.agency_id,
+          s.stop_name,
+          rs.arrival_time,
+          rs.stop_id,
+          c.sunday,
+          c.monday,
+          c.tuesday,
+          c.thursday,
+          c.wednesday,
+          c.friday,
+          c.saturday,
+          s.stop_desc,
+          rs.stop_sequence
+        FROM relevant_stops rs
+        JOIN trips t ON rs.trip_id = t.trip_id
+        JOIN routes r ON t.route_id = r.route_id
+        JOIN agency a ON r.agency_id = a.agency_id
+        JOIN stops s ON rs.stop_id = s.stop_id
+        JOIN calendar c ON t.service_id = c.service_id
+        WHERE c."${this.getCurrentDay()}" = 1
+        ${
+          oneOfNextStopLike
+            ? "AND rs.trip_id IN (SELECT trip_id FROM valid_trips)"
+            : ""
+        }
+        ${
+          routeShortName || agencyName
+            ? "AND rs.trip_id IN (SELECT trip_id FROM filtered_trips)"
+            : ""
+        }
+        ${
+          currentStopDescroptionLike
+            ? `AND s.stop_desc LIKE '%${currentStopDescroptionLike}%'`
+            : ""
+        }
+        ORDER BY rs.arrival_time, rs.trip_id, rs.stop_sequence
+      `;
+
+      if (limit) {
+        query += ` LIMIT ${limit}`;
+      }
+
       const results = await runQuery(query);
       res.send(results);
     } catch (error) {
+      console.error("Query error:", error);
       res.status(500).send({ error: "An error occurred while fetching data." });
     }
   };
