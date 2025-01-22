@@ -155,7 +155,7 @@ class GtfsController {
     }
 
     if (currentStopDescroptionLike) {
-      query += ` AND st.stop_desc LIKE '%${currentStopDescroptionLike}%'`;
+      query += ` AND s.stop_desc LIKE '%${currentStopDescroptionLike}%'`;
     }
 
     if (agencyName) {
