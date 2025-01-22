@@ -1,0 +1,31 @@
+{
+  "name": "helpe-rides",
+  "version": "1.0.0",
+  "main": "dist/app.js",
+  "scripts": {
+    "build": "tsc && copyfiles --flat src/db/gtfs.db dist/db",
+    "start": "node ./dist/app.js",
+    "dev": "nodemon --watch \"src/**\" --ext \"ts,json\" --ignore \"src/**/*.spec.ts\" --exec \"ts-node src/app.ts\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "devDependencies": {
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.7",
+    "@types/sqlite3": "^3.1.11",
+    "concurrently": "^9.1.2",
+    "copyfiles": "^2.4.1",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.7.3"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "gtfs": "^4.15.12",
+    "nodemon": "^3.1.9",
+    "sqlite3": "^5.1.7"
+  }
+}
