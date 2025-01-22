@@ -14,7 +14,7 @@ spec:
     spec:
       containers:
       - name: helpe-rides
-        image: 905418446812.dkr.ecr.il-central-1.amazonaws.com/helpe-stage/helpe_rides
+        image: 905418446812.dkr.ecr.il-central-1.amazonaws.com/helpe-stage/helpe-rides
         imagePullPolicy: Always
         env:
           - name: PORT
