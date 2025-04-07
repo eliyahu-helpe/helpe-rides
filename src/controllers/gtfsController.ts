@@ -20,9 +20,10 @@ class GtfsController {
     timeZone: "Asia/Jerusalem",
   };
   private optionsDays: Intl.DateTimeFormatOptions = {
-    weekday: "long", // 'long', 'short', or 'narrow' are the only valid options
+    weekday: "long",
     timeZone: "Asia/Jerusalem",
   };
+
   getCurrentDay() {
     const israelDay = new Intl.DateTimeFormat("en-GB", this.optionsDays).format(
       new Date()
@@ -32,16 +33,27 @@ class GtfsController {
 
   getLineDetails = async (req: Request, res: Response): Promise<void> => {
     try {
-      const { lineId, agentId, city, addSchedule } = req.body;
+      const { lineId, agentId, city, addSchedule, routeLongName } = req.body;
       const start = process.hrtime();
 
-      const routes = await this.getRoutes(lineId, agentId);
+      // Parse arrays from semicolon-separated strings
+      const parsedLongNames = routeLongName?.split(";").filter(Boolean) ?? [];
+      const parsedLineIds = lineId?.split(";").filter(Boolean) ?? [];
+
+      // Get routes with the modified query to handle arrays
+      const routes = await this.getRoutes(
+        parsedLineIds,
+        parsedLongNames,
+        agentId
+      );
+
       if (!routes.length) {
         res.status(404).json({ error: "No routes found" });
         return;
       }
 
       const trips = await this.getTripsForRoutes(routes);
+
       if (!trips.length) {
         res.status(404).json({ error: "No trips found" });
         return;
@@ -49,9 +61,10 @@ class GtfsController {
 
       const stopTimeDetails = await this.getStopTimeDetails(
         trips,
-        lineId,
+        parsedLineIds,
         city
       );
+
       const object = this.transformStopTimeData(stopTimeDetails);
       if (addSchedule) {
         for (const tripId in object) {
@@ -61,8 +74,8 @@ class GtfsController {
       }
 
       const array = Object.values(object);
-      array.forEach((normilize) => {
-        normilize.stops = this.calculateRelativeStopTimes(normilize.stops);
+      array.forEach((normalize) => {
+        normalize.stops = this.calculateRelativeStopTimes(normalize.stops);
       });
 
       const end = process.hrtime(start);
@@ -77,114 +90,6 @@ class GtfsController {
         .json({ error: "An error occurred while fetching line details" });
     }
   };
-
-  // getStopIdDetails = async (req: Request, res: Response) => {
-  //   const {
-  //     oneOfNextStopLike,
-  //     currentStopId,
-  //     currentStopDescroptionLike,
-  //     agencyName,
-  //     limit,
-  //     routeShortName,
-  //   } = req.body;
-
-  //   if (
-  //     !oneOfNextStopLike &&
-  //     !currentStopId &&
-  //     !currentStopDescroptionLike &&
-  //     !agencyName &&
-  //     !routeShortName
-  //   ) {
-  //     res.status(400).json({ error: "bad request" });
-  //   }
-  //   let query = "";
-  //   if (currentStopId) {
-  //     query = `
-  //       WITH CurrentStopSequence AS (
-  //         SELECT st1.trip_id, st1.stop_sequence, st1.stop_id
-  //         FROM stop_times st1
-  //         WHERE st1.stop_id = '${currentStopId}'
-  //       )`;
-  //   }
-  //   if (oneOfNextStopLike) {
-  //     query += `
-  //       , NextStops AS (
-  //         SELECT st2.trip_id
-  //         FROM CurrentStopSequence cs
-  //         JOIN stop_times st2 ON cs.trip_id = st2.trip_id
-  //         JOIN stops s ON st2.stop_id = s.stop_id
-  //         WHERE st2.stop_sequence > cs.stop_sequence
-  //         AND s.stop_name LIKE '%${oneOfNextStopLike}%'
-  //       )`;
-  //   }
-  //   query += `
-  //     SELECT DISTINCT
-  //       st.trip_id,
-  //       r.route_id,
-  //       r.route_long_name,
-  //       r.route_short_name,
-  //       a.agency_name,
-  //       a.agency_id,
-  //       s.stop_name,
-  //       st.arrival_time,
-  //       st.stop_id,
-  //       c.sunday,
-  //       c.monday,
-  //       c.tuesday,
-  //       c.thursday,
-  //       c.wednesday,
-  //       c.friday,
-  //       c.saturday,
-  //       s.stop_desc,
-  //       st.stop_sequence
-  //     FROM stop_times st
-  //     JOIN trips t ON st.trip_id = t.trip_id
-  //     JOIN routes r ON t.route_id = r.route_id
-  //     JOIN agency a ON r.agency_id = a.agency_id
-  //     JOIN stops s ON st.stop_id = s.stop_id
-  //     JOIN calendar c ON t.service_id = c.service_id
-  //     WHERE`;
-  //   const israelTime = new Intl.DateTimeFormat("en-GB", this.options).format(
-  //     new Date()
-  //   );
-  //   query += ` st.arrival_time > '${israelTime}'`;
-  //   query += ` AND c."${this.getCurrentDay()}" = 1`;
-
-  //   if (currentStopId) {
-  //     query += ` AND st.stop_id = '${currentStopId}'`;
-  //   }
-
-  //   if (currentStopDescroptionLike) {
-  //     query += ` AND s.stop_desc LIKE '%${currentStopDescroptionLike}%'`;
-  //   }
-
-  //   if (agencyName) {
-  //     query += ` AND agency_name LIKE '%${agencyName}%'`;
-  //   }
-  //   if (routeShortName) {
-  //     query += ` AND r.route_short_name = ${routeShortName}`;
-  //   }
-  //   if (oneOfNextStopLike) {
-  //     query += `
-  //       AND EXISTS (
-  //         SELECT 1
-  //         FROM NextStops ns
-  //         WHERE ns.trip_id = st.trip_id
-  //       )`;
-  //   }
-
-  //   query += ` ORDER BY st.trip_id, st.stop_sequence`;
-  //   if (limit) {
-  //     query += ` LIMIT ${limit}`;
-  //   }
-  //   console.log("stop details", query);
-  //   try {
-  //     const results = await runQuery(query);
-  //     res.send(results);
-  //   } catch (error) {
-  //     res.status(500).send({ error: "An error occurred while fetching data." });
-  //   }
-  // };
 
   getStopIdDetails = async (req: Request, res: Response) => {
     const {
@@ -212,7 +117,6 @@ class GtfsController {
     );
 
     try {
-      // Build the main query focusing on stop_times first
       let query = `
         WITH relevant_stops AS (
           SELECT st.trip_id, st.stop_id, st.stop_sequence, st.arrival_time
@@ -220,10 +124,9 @@ class GtfsController {
           WHERE st.arrival_time > '${israelTime}'
           ${currentStopId ? `AND st.stop_id = '${currentStopId}'` : ""}
           ORDER BY st.arrival_time
-          LIMIT 10000  -- Limit initial dataset
+          LIMIT 10000
         )`;
 
-      // If we need to check next stops, do it early
       if (oneOfNextStopLike) {
         query += `
         , valid_trips AS (
@@ -236,7 +139,6 @@ class GtfsController {
         )`;
       }
 
-      // Add route and agency filtering if needed
       if (routeShortName || agencyName) {
         query += `
         , filtered_trips AS (
@@ -250,7 +152,6 @@ class GtfsController {
         )`;
       }
 
-      // Main select with all necessary data
       query += `
         SELECT 
           rs.trip_id,
@@ -308,13 +209,43 @@ class GtfsController {
     }
   };
 
-  private async getRoutes(lineId: string, agentId?: number): Promise<Route[]> {
+  private async getRoutes(
+    lineIds: string[],
+    routeLongNames: string[],
+    agentId?: number
+  ): Promise<Route[]> {
+    let conditions = [];
+    let params = [];
+
+    if (lineIds.length > 0) {
+      const lineIdPlaceholders = lineIds
+        .map(() => "?")
+        .join(" OR route_short_name = ");
+      conditions.push(`(route_short_name = ${lineIdPlaceholders})`);
+      params.push(...lineIds);
+    }
+
+    if (routeLongNames.length > 0) {
+      const longNamePlaceholders = routeLongNames
+        .map(() => "?")
+        .join(" OR route_long_name = ");
+      conditions.push(`(route_long_name = ${longNamePlaceholders})`);
+      params.push(...routeLongNames);
+    }
+
+    if (agentId) {
+      conditions.push("agency_id = ?");
+      params.push(agentId);
+    }
+
+    const whereClause =
+      conditions.length > 0 ? "WHERE " + conditions.join(" AND ") : "";
+
     const query = `
       SELECT * FROM routes 
-      WHERE route_short_name = ? 
-      ${agentId ? "AND agency_id = ?" : ""}
+      ${whereClause}
     `;
-    const params = agentId ? [lineId, agentId] : [lineId];
+
     const results = await runQuery(query, params);
     return results as Route[];
   }
@@ -335,10 +266,28 @@ class GtfsController {
 
   private async getStopTimeDetails(
     trips: Trip[],
-    lineId: string,
+    lineIds: string[],
     city?: string
   ): Promise<StopTimeJoinResult[][]> {
     const stopTimeQueries = trips.map(async (trip) => {
+      let whereConditions = ["t.trip_id = ?"];
+      let params = [trip.trip_id];
+
+      // Only add route_short_name conditions if lineIds array is not empty
+      if (lineIds.length > 0) {
+        const lineIdConditions = lineIds
+          .map(() => "r.route_short_name = ?")
+          .join(" OR ");
+        whereConditions.push(`(${lineIdConditions})`);
+        params.push(...lineIds);
+      }
+
+      // Add city condition if provided
+      if (city) {
+        whereConditions.push("s.stop_desc LIKE ?");
+        params.push(`%${city}%`);
+      }
+
       const query = `
         SELECT 
           t.trip_id,
@@ -355,13 +304,10 @@ class GtfsController {
         LEFT JOIN routes r ON r.route_id = t.route_id
         LEFT JOIN stops s ON s.stop_id = st.stop_id
         LEFT JOIN agency a ON r.agency_id = a.agency_id
-        WHERE t.trip_id = ? AND r.route_short_name = ?
-        ${city ? "AND s.stop_desc LIKE ?" : ""}
+        WHERE ${whereConditions.join(" AND ")}
         ORDER BY st.stop_sequence
       `;
-      const params = city
-        ? [trip.trip_id, lineId, `%${city}%`]
-        : [trip.trip_id, lineId];
+
       const results = await runQuery(query, params);
       return results as StopTimeJoinResult[];
     });
@@ -433,6 +379,7 @@ class GtfsController {
       const [hours, minutes, seconds] = time.split(":").map(Number);
       return hours * 3600 + minutes * 60 + seconds;
     };
+
     const secondsToTime = (seconds: number) => {
       const hours = Math.floor(seconds / 3600);
       const minutes = Math.floor((seconds % 3600) / 60);
@@ -440,9 +387,10 @@ class GtfsController {
         .toString()
         .padStart(2, "0")}`;
     };
+
     const startTimeInSeconds = timeToSeconds(stops[0].relative_stop_time);
 
-    return stops.map((stop: StopTime, index: number) => {
+    return stops.map((stop: StopTime) => {
       const stopTimeInSeconds = timeToSeconds(stop.relative_stop_time);
       const relativeTimeInSeconds = stopTimeInSeconds - startTimeInSeconds;
       const relativeTime = secondsToTime(relativeTimeInSeconds);
@@ -484,7 +432,6 @@ class GtfsController {
       "0"
     )}:${String(seconds).padStart(2, "0")}`;
   }
-
   private async getSchedule(routeId: string): Promise<Schedule> {
     const query = `
       SELECT st.arrival_time, c.sunday, c.monday, c.tuesday, 
@@ -530,6 +477,49 @@ class GtfsController {
 
     return schedule;
   }
+
+  getPrice = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { start_stop_name, end_stop_name, route_short_name } = req.body;
+
+      if (!start_stop_name || !end_stop_name) {
+        res.status(400).json({ error: "Stop names required" });
+        return;
+      }
+
+      let whereConditions = [
+        "start_stop_name LIKE ?",
+        "end_stop_name LIKE ?",
+        "route_short_name is not null",
+        "price is not null",
+      ];
+      let params = [`%${start_stop_name}%`, `%${end_stop_name}%`];
+
+      // Only add route_short_name condition if it's provided
+      if (route_short_name) {
+        whereConditions.unshift("route_short_name = ?");
+        params.unshift(route_short_name);
+      }
+
+      const query = `
+        SELECT * 
+        FROM route_fare_lookup
+        WHERE ${whereConditions.join(" AND ")}
+        LIMIT 1
+      `;
+
+      const results = await runQuery(query, params);
+
+      if (results.length === 0) {
+        res.status(404).json({ error: "No route found" });
+      } else {
+        res.json(results[0]);
+      }
+    } catch (error) {
+      console.error("Route details error:", error);
+      res.status(500).json({ error: "Failed to fetch route details" });
+    }
+  };
 }
 
 export const gtfsController = new GtfsController();

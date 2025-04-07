@@ -37,7 +37,7 @@ class SiriController {
             arrivalData: arrivalTimeResponse.data[0].actual_arrival_time,
           };
         } catch (err) {
-          return { stopId: stopId.stop_id, error: err.message };
+          return { stopId: stopId.stop_id, error: err };
         }
       });
 

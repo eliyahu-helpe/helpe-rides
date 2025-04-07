@@ -5,7 +5,7 @@ export function runQuery(query: string, params: any[] = []): Promise<any[]> {
     const db = DatabaseManager.getInstance();
     const result: any[] = [];
 
-    console.log("Starting query execution...");
+    // console.log("Starting query execution...");
 
     db.serialize(() => {
       const stmt = db.prepare(query);
@@ -26,7 +26,7 @@ export function runQuery(query: string, params: any[] = []): Promise<any[]> {
             reject(err);
             return;
           }
-          console.log(`Query completed. ${count} rows processed.`);
+          // console.log(`Query completed. ${count} rows processed.`);
           resolve(result);
         }
       );
