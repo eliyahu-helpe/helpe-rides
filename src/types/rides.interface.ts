@@ -8,6 +8,9 @@ export interface Route {
 export interface Trip {
   trip_id: string;
   route_id: string;
+  service_id: string;
+  trip_headsign: string;
+  direction_id: string;
 }
 
 export interface Stop {
@@ -25,6 +28,7 @@ export interface StopTimeJoinResult {
   agency_id: number;
   agency_name: string;
   route_short_name: string;
+  stop_id: string;
 }
 
 export interface LineDetailsResponse {
@@ -39,12 +43,14 @@ export interface LineDetailsResponse {
     agency_id: number;
     schedule: Schedule;
     route_short_name: string;
+    description: string;
   };
 }
 
 export interface StopTime {
   stop_name: string;
   relative_stop_time: string;
+  stop_id: string;
 }
 export interface Schedule {
   sunday: string[];
@@ -54,4 +60,11 @@ export interface Schedule {
   thursday: string[];
   friday: string[];
   saturday: string[];
+}
+
+export interface GroupedSchedule {
+  route_id: string;
+  trip_id: string;
+  description: string;
+  schedule: Schedule;
 }

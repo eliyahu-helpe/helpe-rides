@@ -1,12 +1,10 @@
 import express from "express";
-import { gtfsController } from "../controllers/gtfsController";
-import { siriControler } from "../controllers/siriController";
+import gtfController from "../controllers/gtfsNew";
 
 const routers = express.Router();
 
-routers.post("/gtfs", gtfsController.getLineDetails);
-routers.post("/siri", siriControler.getLineDetails);
-routers.post("/stops-details", gtfsController.getStopIdDetails);
-routers.post("/get-price", gtfsController.getPrice);
+routers.post("/lineDetails", gtfController.getLineDetails);
+routers.post("/stopDetailsByStopCode", gtfController.getDetailsByStopCode);
+routers.post("/getDetailsByRouteId", gtfController.getDetailsByRouteId);
 
 export default routers;
