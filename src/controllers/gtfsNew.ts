@@ -291,7 +291,7 @@ class GtfsNewController {
 
       // Query to get routes serving this stop
       const routesQuery = `
-        SELECT DISTINCT r.route_id, r.route_short_name
+        SELECT DISTINCT r.route_short_name, route_long_name
         FROM routes r
         JOIN trips t ON r.route_id = t.route_id
         JOIN stop_times st ON t.trip_id = st.trip_id

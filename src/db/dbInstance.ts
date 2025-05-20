@@ -1,45 +1,28 @@
 import sqlite3 from "sqlite3";
-import fs from "fs";
-import path from "path";
-
+import * as dotenv from "dotenv";
+dotenv.config();
 class DatabaseManager {
   private static instance: sqlite3.Database | null = null;
 
   private constructor() {}
 
   public static getInstance(): sqlite3.Database {
+    const dbPath =
+      process.env.NODE_ENV === "production"
+        ? "dist/db/gtfs.db"
+        : "src/db/gtfs.db";
     if (this.instance === null) {
-      this.instance = new sqlite3.Database("src/db/gtfs.db", (err) => {
+      this.instance = new sqlite3.Database(dbPath, (err) => {
         if (err) {
-          console.error("Error opening in-memory database:", err);
+          console.error("Error opening database:", err);
         } else {
-          console.log("In-memory database opened successfully");
+          console.log("database opened successfully");
           // this.loadGTFSData();
         }
       });
     }
     return this.instance;
   }
-
-  // private static loadGTFSData(): void {
-  //   const filePath = path.resolve(__dirname, "gtfs.db");
-  //   if (!fs.existsSync(filePath)) {
-  //     console.error(`File database not found at ${filePath}`);
-  //     return;
-  //   }
-
-  //   new sqlite3.Database(filePath, (err) => {
-  //     if (err) {
-  //       console.error("Error opening file database:", err);
-  //       return;
-  //     }
-  //     console.log("File database opened successfully");
-  //     this.instance?.exec(
-  //       `ATTACH DATABASE '${filePath}' AS file_db`,
-  //       (err) => {}
-  //     );
-  //   });
-  // }
 
   public static close(): void {
     if (this.instance) {
